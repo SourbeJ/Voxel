@@ -119,7 +119,7 @@ public class ChunkManager : MonoBehaviour
 
     void LoadChunk(Vector2Int chunkPosition)
     {
-        // Créez un nouveau chunk et l'ajoutez à la liste des chunks chargés
+        // Généré la matrice de block du chunk
         if (chunkPosition.x >= 0 && chunkPosition.y >= 0 && chunkPosition.x < 64 && chunkPosition.y < 64)
             voxelMapGenerator.GenerateChunk(chunkPosition);
             

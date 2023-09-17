@@ -30,7 +30,7 @@ public class VoxelMapGenerator : MonoBehaviour
     public float tunnelNoise = 0f; // Amplitude du bruit pour rendre les tunnels plus naturels
 
     public float treeSpawnProbability = 0.05f; // Probabilité d'apparition d'un arbre par bloc d'herbe
-
+    //Liste d'attente de chargement des chunkd
     Queue<MapThreadInfo<Chunk>> mapdataInfoQueue = new Queue<MapThreadInfo<Chunk>>();
 
     void Start()
@@ -67,6 +67,7 @@ public class VoxelMapGenerator : MonoBehaviour
 
     public Chunk GenerateChunk(Vector2Int chunkPos)
     {
+        //Génetation du terrain des arbres des ocean/lac, et des montagnes
         Vector2 chunkOffset = new Vector2(chunkPos.x * 16, chunkPos.y * 16);
 
         Chunk chunk = voxelMap.chunks[chunkPos.x, chunkPos.y];
@@ -323,6 +324,7 @@ public class VoxelMapGenerator : MonoBehaviour
         return scaledNoise;
     }
 
+    //requette pour generé le chunk sur un autre thread
     public void RequestMapData(Vector2Int chunkPosition, Action<Chunk> callback)
     {
         ThreadStart threadStart = delegate
@@ -333,6 +335,7 @@ public class VoxelMapGenerator : MonoBehaviour
         new Thread(threadStart).Start();
     }
 
+    //lancement du theard, le thread ne peut pas communiqué avec les autres variables il faut donc tout lui donné avant de le lancé, et on récupère par callback
     public Chunk MapDataThread(Vector2Int chunkPosition, Chunk[,] chunks, Action<Chunk> callback)
     {
         Chunk chunk = voxelMap.ShowChunk(chunkPosition, chunks);
@@ -344,6 +347,8 @@ public class VoxelMapGenerator : MonoBehaviour
         return chunk;
     }
 
+
+    //element de la liste d'attente pour les chunks
     struct MapThreadInfo<T>
     {
         public readonly Action<T> callback;

@@ -157,6 +157,7 @@ public class VoxelMap : MonoBehaviour
         return numerator / denominator;
     }
 
+    //permet d'ajouter un block et de mettre a jour le mesh du chunk (optimisé pour un block)
     public void AddBlock(Vector3Int _pos, int id)
     {
         if (IsValid(_pos))
@@ -172,6 +173,7 @@ public class VoxelMap : MonoBehaviour
 
     }
 
+    //permet de retirer un block et de mettre a jour le mesh du chunk (optimisé pour un block)
     public void RemoveBlock(Vector3Int _pos)
     {
         Vector3Int lPos = PosWorlkToChunk(_pos);
@@ -183,6 +185,7 @@ public class VoxelMap : MonoBehaviour
         }
     }
 
+    //mise a jour du mesh apres modfication autour d'un block de la maps
     void UpdateArrondBlock(Vector3Int _pos, int id = -1)
     {
         UpdateBlock(_pos, id);
@@ -216,6 +219,8 @@ public class VoxelMap : MonoBehaviour
         return GetChunk(_pos, chunks).matriceBlock[lPos.x, lPos.y, lPos.z];
     }
 
+
+    //mise a jour local du mesh apres modfication d'un block de la maps
     void UpdateBlock(Vector3Int _pos, int id = -1)
     {
         if (IsValid(_pos))
@@ -230,18 +235,18 @@ public class VoxelMap : MonoBehaviour
                 if (chunk.matriceBlock[lPos.x, lPos.y, lPos.z] != -1)
                 {
                     CreateMeshBlock(_pos, GetTypeBlock(_pos), chunks, dataBlocks, ref chunk.meshMap);
-                    //CreateMeshBlock(_pos, GetTypeBlock(_pos)); ------------------------------------------------------------------------------- pour poseé ou cassé action requise, faudra ajoute le meshMap et call ReMesh
                 }
             }
             else
             {
                 CreateMeshBlock(_pos, id, chunks, dataBlocks, ref chunk.meshMap);
-                //CreateMeshBlock(_pos, id);---------------------------------------------------------------------------------------------------- pour poseé ou cassé action requise, faudra ajoute le meshMap et call ReMesh
             }
 
         }
     }
 
+
+    //permet de vérifié si la face du cube doit etre modélisé
     public void CreateMeshBlock(Vector3Int pos, int id, Chunk[,] _chunks, List<DataBlock> _dataBlock, ref MeshBlock[,,] meshBlock)
     {
         Vector2 texUp = dataBlocks[id].UpTexture;
@@ -258,6 +263,7 @@ public class VoxelMap : MonoBehaviour
 
     }
 
+    //permet de transformé une position de chunk en position golbale
     public Vector3Int TransformLocalToGlobal(Vector3Int localBlockPosition, Vector2Int chunkPosition)
     {
         // Calculez les coordonnées mondiales en ajoutant les coordonnées locales aux coordonnées du chunk
@@ -268,6 +274,7 @@ public class VoxelMap : MonoBehaviour
         return new Vector3Int(worldX, worldY, worldZ);
     }
 
+    //exécuté dans un thread, permet de modélisé la map voxel
     public MeshBlock[,,] UpdateAllBlock(Vector2Int pos, Chunk[,] _chunks, List<DataBlock> _dataBlock)
     {
         MeshBlock[,,] meshMap = new MeshBlock[16, 256, 16];
@@ -299,7 +306,7 @@ public class VoxelMap : MonoBehaviour
 
 
 
-
+    //executer dans un thread, permet de vérifier la modélisation d'une face
     void IfCreateFace(Vector3Int pos, Vector3Int direction, Vector2 tex, Chunk[,] _chunks, List<DataBlock> _dataBlocks, ref MeshBlock[,,] meshMap)
     {
         Vector3Int posCTest = PosWorlkToChunk(pos + direction);
@@ -322,6 +329,7 @@ public class VoxelMap : MonoBehaviour
         }
     }
 
+    //exécuté dans un thread, modélisation de la face du cube
     void CreateFace(Vector3Int pos, Vector3Int direction, Vector2 tex, ref MeshBlock[,,] meshMap)
     {
         if(direction == Vector3Int.forward)
@@ -343,6 +351,9 @@ public class VoxelMap : MonoBehaviour
             CreateFaceDown(pos, tex, ref meshMap);
     }
 
+    //ces Fonction CreateFace... obligation de la forme d'un cube, sinon faut renseigné dans le dataBlock la modélisation du block
+
+    //modélisation de la face arriere
     void CreateFaceBack(Vector3Int pos, Vector2 texture, ref MeshBlock[,,] meshMap)
     {
         Vector3[] _vertices = {
@@ -379,6 +390,7 @@ public class VoxelMap : MonoBehaviour
         meshMap[pos.x, pos.y, pos.z].meshFaces[(int)EnumDirection.Back] = new MeshFace(_vertices, _triangles, _uv, _normals);
     }
 
+    //modélisation de la face avant
     void CreateFaceForward(Vector3Int pos, Vector2 texture, ref MeshBlock[,,] meshMap)
     {
         Vector3[] _vertices = {
@@ -415,6 +427,7 @@ public class VoxelMap : MonoBehaviour
         meshMap[pos.x, pos.y, pos.z].meshFaces[(int)EnumDirection.Forward] = new MeshFace(_vertices, _triangles, _uv, _normals);
     }
 
+    //modélisation de la face droite
     void CreateFaceRight(Vector3Int pos, Vector2 texture, ref MeshBlock[,,] meshMap)
     {
         Vector3[] _vertices = {
@@ -452,6 +465,7 @@ public class VoxelMap : MonoBehaviour
         meshMap[pos.x, pos.y, pos.z].meshFaces[(int)EnumDirection.Right] = new MeshFace(_vertices, _triangles, _uv, _normals);
     }
 
+    //modélisation de la face gauche
     void CreateFaceLeft(Vector3Int pos, Vector2 texture, ref MeshBlock[,,] meshMap)
     {
         Vector3[] _vertices = {
@@ -488,6 +502,7 @@ public class VoxelMap : MonoBehaviour
         meshMap[pos.x, pos.y, pos.z].meshFaces[(int)EnumDirection.Left] = new MeshFace(_vertices, _triangles, _uv, _normals);
     }
 
+    //modélisation de la face au dessus
     void CreateFaceUp(Vector3Int pos, Vector2 texture, ref MeshBlock[,,] meshMap)
     {
         Vector3[] _vertices = {
@@ -525,7 +540,7 @@ public class VoxelMap : MonoBehaviour
         
         meshMap[pos.x, pos.y, pos.z].meshFaces[(int)EnumDirection.Up] = new MeshFace(_vertices, _triangles, _uv, _normals);
     }
-
+    //modélisation de la face en dessous
     void CreateFaceDown(Vector3Int pos, Vector2 texture, ref MeshBlock[,,] meshMap)
     {
         Vector3[] _vertices = {
@@ -560,8 +575,6 @@ public class VoxelMap : MonoBehaviour
         };
         meshMap[pos.x, pos.y, pos.z].meshFaces[(int)EnumDirection.Down] = new MeshFace(_vertices, _triangles, _uv, _normals);
     }
-
-
 }
 
 [System.Serializable]
@@ -612,6 +625,7 @@ public class Chunk
         meshMap = new MeshBlock[16, 256, 16];
     }
 
+    //permet de modélisé le chunk avec les données meshMap
     public void ReMesh(Material[] materials)
     {
 
@@ -644,7 +658,7 @@ public class Chunk
                 {
                     for (int d = 0; d < 6; d++)
                     {
-
+                        // atribution des index du triangles celon les vertices et ajout dans des listes
                         if (this.meshMap[x, y, z] != null && this.meshMap[x, y, z].meshFaces[d] != null)
                         {
                             vertices.AddRange(this.meshMap[x, y, z].meshFaces[d].vertices);
@@ -658,7 +672,7 @@ public class Chunk
 
                             triangles.AddRange(tempTriangles);
                             uv.AddRange(this.meshMap[x, y, z].meshFaces[d].uv);
-
+                            //permet la sépartion du materiaux pour la transparence de l'eau
                             if (this.meshMap[x, y, z].IsTransparent)
                                 trianglesTransparent.AddRange(tempTriangles.ToArray());
                             else
@@ -676,6 +690,7 @@ public class Chunk
         this.cubeMesh.vertices = vertices.ToArray();
 
         this.cubeMesh.subMeshCount = 2;
+        //permet la sépartion du materiaux pour la transparence de l'eau
         this.cubeMesh.SetTriangles(trianglesNotTransparent, 0);
         this.cubeMesh.SetTriangles(trianglesTransparent, 1);
         //mythis.cubeMesh.triangles = triangles.ToArray();

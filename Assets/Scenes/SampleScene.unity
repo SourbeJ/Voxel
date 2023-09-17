@@ -540,7 +540,7 @@ MonoBehaviour:
   voxelMapGenerator: {fileID: 808903373}
   VoxelMap: {fileID: 1120448675}
   chunkSize: 16
-  renderDistance: 2
+  renderDistance: 6
 --- !u!4 &1593032820
 Transform:
   m_ObjectHideFlags: 0
