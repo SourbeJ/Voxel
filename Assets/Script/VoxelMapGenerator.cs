@@ -2,6 +2,7 @@ using System.Threading;
 using System;
 using UnityEngine;
 using System.Collections.Generic;
+using static UnityEditor.PlayerSettings;
 
 public class VoxelMapGenerator : MonoBehaviour
 {
@@ -32,6 +33,7 @@ public class VoxelMapGenerator : MonoBehaviour
     public float treeSpawnProbability = 0.05f; // Probabilité d'apparition d'un arbre par bloc d'herbe
     //Liste d'attente de chargement des chunkd
     Queue<MapThreadInfo<Chunk>> mapdataInfoQueue = new Queue<MapThreadInfo<Chunk>>();
+    Queue<MapThreadInfo<Chunk>> mehdataInfoQueue = new Queue<MapThreadInfo<Chunk>>();
 
     void Start()
     {
@@ -45,11 +47,21 @@ public class VoxelMapGenerator : MonoBehaviour
 
     private void Update()
     {
+        //généré les matrices cubes
         if (mapdataInfoQueue.Count > 0)
         {
             for (int i = 0; i < mapdataInfoQueue.Count; i++)
             {
                 MapThreadInfo<Chunk> threadInfo = mapdataInfoQueue.Dequeue();
+                threadInfo.callback(threadInfo.parameter);
+            }
+        }
+        //généré le mesh
+        if (mehdataInfoQueue.Count > 0)
+        {
+            for (int i = 0; i < mehdataInfoQueue.Count; i++)
+            {
+                MapThreadInfo<Chunk> threadInfo = mehdataInfoQueue.Dequeue();
                 threadInfo.callback(threadInfo.parameter);
             }
         }
@@ -156,14 +168,20 @@ public class VoxelMapGenerator : MonoBehaviour
 
     public Chunk ShowChunk(Vector2Int pos)
     {
-        RequestMapData(pos, OnMeshDATAReceived);
+        RequestMapData(pos, OnMapDataReceived);
         Chunk chunk = voxelMap.chunks[pos.x, pos.y];
         return chunk;
     }
 
-    void OnMeshDATAReceived(Chunk chunk)
+    void OnMapDataReceived(Chunk chunk)
     {
-        chunk.ReMesh(voxelMap.materials);
+        RequestMeshData(chunk, OnMeshDataReceived);
+        //chunk.ReMesh(voxelMap.materials);
+    }
+
+    void OnMeshDataReceived(Chunk chunk)
+    {
+        chunk.CreateMesh(voxelMap.materials);
     }
 
     void GenerateThree(Vector3Int position)
@@ -340,11 +358,32 @@ public class VoxelMapGenerator : MonoBehaviour
     {
         Chunk chunk = voxelMap.ShowChunk(chunkPosition, chunks);
         MeshBlock[,,] meshMap = chunk.meshMap;
+        //Debug.Log("GenerateChunk ");
         lock (mapdataInfoQueue)
         {
             mapdataInfoQueue.Enqueue(new MapThreadInfo<Chunk>(callback, chunk));
         }
         return chunk;
+    }
+
+    public void RequestMeshData (Chunk chunk, Action<Chunk> callback)
+    {
+        ThreadStart threadStart = delegate
+        {
+            MeshDataThread(chunk, callback);
+        };
+
+        new Thread(threadStart).Start();
+    }
+
+    void MeshDataThread(Chunk chunk, Action<Chunk> callback)
+    {
+        chunk.CalculMesh();
+        //Debug.Log("CalculMesh ");
+        lock (mehdataInfoQueue)
+        {
+            mehdataInfoQueue.Enqueue(new MapThreadInfo<Chunk>(callback, chunk));
+        }
     }
 
 

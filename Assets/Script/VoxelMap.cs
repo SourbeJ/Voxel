@@ -197,19 +197,36 @@ public class VoxelMap : MonoBehaviour
         UpdateBlock(_pos + Vector3Int.down);
         Debug.Log("Chunk " + GetChunkPosition(_pos));
 
-        GetChunk(_pos, chunks).ReMesh(materials);
+        GetChunk(_pos, chunks).CalculMesh();
+        GetChunk(_pos, chunks).CreateMesh(materials);
 
         if (GetChunk(_pos, chunks) != GetChunk(_pos + Vector3Int.forward, chunks))
-            GetChunk(_pos + Vector3Int.forward, chunks).ReMesh(materials);
+        {
+            Chunk myChunk = GetChunk(_pos + Vector3Int.forward, chunks);
+            myChunk.CalculMesh();
+            myChunk.CreateMesh(materials);
+        }
 
         if (GetChunk(_pos, chunks) != GetChunk(_pos + Vector3Int.back, chunks))
-            GetChunk(_pos + Vector3Int.back, chunks).ReMesh(materials);
+        {
+            Chunk myChunk = GetChunk(_pos + Vector3Int.back, chunks);
+            myChunk.CalculMesh();
+            myChunk.CreateMesh(materials);
+        }
 
         if (GetChunk(_pos, chunks) != GetChunk(_pos + Vector3Int.right, chunks))
-            GetChunk(_pos + Vector3Int.right, chunks).ReMesh(materials);
+        {
+            Chunk myChunk = GetChunk(_pos + Vector3Int.right, chunks);
+            myChunk.CalculMesh();
+            myChunk.CreateMesh(materials);
+        }
 
         if (GetChunk(_pos, chunks) != GetChunk(_pos + Vector3Int.left, chunks))
-            GetChunk(_pos + Vector3Int.left, chunks).ReMesh(materials);
+        {
+            Chunk myChunk = GetChunk(_pos + Vector3Int.left, chunks);
+            myChunk.CalculMesh();
+            myChunk.CreateMesh(materials);
+        }
 
     }
 
@@ -619,20 +636,27 @@ public class Chunk
     public MeshRenderer meshRenderer;
     public MeshCollider meshCollider;
 
+    List<Vector3> vertices;
+    List<int> triangles;
+    List<int> trianglesTransparent;
+    List<int> trianglesNotTransparent;
+    List<Vector2> uv;
+    List<Vector3> normals;
+    int nV = 0;
+
     public Chunk()
     {
         matriceBlock = new int[16, 256, 16];
         meshMap = new MeshBlock[16, 256, 16];
     }
-
-    //permet de modélisé le chunk avec les données meshMap
-    public void ReMesh(Material[] materials)
+    //permet de crée le mesh calculé par CalculMesh()
+    //les étapes sont séparé pour permetre le streading
+    public void CreateMesh(Material[] materials)
     {
-
-        if(meshFilter == null)
+        if (meshFilter == null)
         {
             meshFilter = cube.AddComponent<MeshFilter>();
-        }      
+        }
         if (meshRenderer == null)
             meshRenderer = cube.AddComponent<MeshRenderer>();
         if (meshCollider == null)
@@ -640,15 +664,34 @@ public class Chunk
         cubeMesh = meshFilter.mesh;
         cubeMesh.subMeshCount = 2;
 
+        this.cubeMesh.Clear();
 
+        this.cubeMesh.vertices = vertices.ToArray();
 
-        List<Vector3> vertices = new List<Vector3>();
-        List<int> triangles = new List<int>();
-        List<int> trianglesTransparent = new List<int>();
-        List<int> trianglesNotTransparent = new List<int>();
-        List<Vector2> uv = new List<Vector2>();
-        List<Vector3> normals = new List<Vector3>();
-        int nV = 0;
+        this.cubeMesh.subMeshCount = 2;
+        //permet la sépartion du materiaux pour la transparence de l'eau
+        this.cubeMesh.SetTriangles(trianglesNotTransparent, 0);
+        this.cubeMesh.SetTriangles(trianglesTransparent, 1);
+        //mythis.cubeMesh.triangles = triangles.ToArray();
+
+        this.cubeMesh.uv = uv.ToArray();
+        this.cubeMesh.normals = normals.ToArray();
+
+        this.meshFilter.mesh = this.cubeMesh;
+        this.meshCollider.sharedMesh = this.cubeMesh;
+        this.meshRenderer.materials = materials;
+    }
+
+    //permet de modélisé le chunk avec les données meshMap
+    public void CalculMesh()
+    {
+        vertices = new List<Vector3>();
+        triangles = new List<int>();
+        trianglesTransparent = new List<int>();
+        trianglesNotTransparent = new List<int>();
+        uv = new List<Vector2>();
+        normals = new List<Vector3>();
+        nV = 0;
 
         for (int x = 0; x < 16; x++)
         {
@@ -658,6 +701,7 @@ public class Chunk
                 {
                     for (int d = 0; d < 6; d++)
                     {
+                        
                         // atribution des index du triangles celon les vertices et ajout dans des listes
                         if (this.meshMap[x, y, z] != null && this.meshMap[x, y, z].meshFaces[d] != null)
                         {
@@ -685,22 +729,6 @@ public class Chunk
                 }
             }
         }
-        this.cubeMesh.Clear();
-
-        this.cubeMesh.vertices = vertices.ToArray();
-
-        this.cubeMesh.subMeshCount = 2;
-        //permet la sépartion du materiaux pour la transparence de l'eau
-        this.cubeMesh.SetTriangles(trianglesNotTransparent, 0);
-        this.cubeMesh.SetTriangles(trianglesTransparent, 1);
-        //mythis.cubeMesh.triangles = triangles.ToArray();
-
-        this.cubeMesh.uv = uv.ToArray();
-        this.cubeMesh.normals = normals.ToArray();
-
-        this.meshFilter.mesh = this.cubeMesh;
-        this.meshCollider.sharedMesh = this.cubeMesh;
-        this.meshRenderer.materials = materials;
     }
 }
 

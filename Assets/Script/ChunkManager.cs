@@ -143,11 +143,10 @@ public class ChunkManager : MonoBehaviour
         // Déchargez un chunk en le détruisant et en le retirant de la liste des chunks chargés
         if (loadedChunksShow.Contains(chunkPosition))
         {
-            Debug.Log("Unload " + chunkPosition);
+            //Debug.Log("Unload " + chunkPosition);
             Destroy(VoxelMap.chunks[chunkPosition.x, chunkPosition.y].cube.gameObject);
             loadedChunksShow.Remove(chunkPosition);
+            VoxelMap.chunks[chunkPosition.x, chunkPosition.y] = new Chunk();
         }
     }
-
-
 }
